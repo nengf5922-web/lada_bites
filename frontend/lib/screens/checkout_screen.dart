@@ -44,10 +44,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (widget.produkDipilih != null && widget.produkDipilih!.isNotEmpty) {
       _listProduk = List.from(widget.produkDipilih!);
     } else {
-      _listProduk = [
-        {"id": 1, "nama": "Krupuk Singkong Bits", "harga": 18000, "jumlah": 2},
-        {"id": 2, "nama": "Basreng Daun Jeruk", "harga": 20000, "jumlah": 1},
-      ];
+      _listProduk = [];
     }
     _hitungTotalHarga();
     _fetchProfilUser();
@@ -386,7 +383,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ],
         ),
       ),
-      bottomSheet: Container(
+      bottomNavigationBar: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))], borderRadius: const BorderRadius.vertical(top: Radius.circular(30))),
         child: SafeArea(

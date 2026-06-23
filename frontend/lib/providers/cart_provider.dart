@@ -36,14 +36,14 @@ class CartProvider with ChangeNotifier {
       // Jika sudah ada, tambahkan jumlah quantity-nya saja
       _items[index]['jumlah'] += 1;
     } else {
-      // Jika belum ada, masukkan sebagai barang baru dan otomatis tercentang
+      // Jika belum ada, masukkan sebagai barang baru tanpa otomatis tercentang (sesuai permintaan)
       _items.add({
         "id": produk['id'], // Menyimpan ID untuk sinkronisasi pesanan ke backend
         "nama": produk['nama'],
         "harga": produk['harga'],
         "jumlah": produk['jumlah'] ?? 1,
         "gambar": produk['gambar'] ?? '',
-        "terpilih": true, 
+        "terpilih": false, 
       });
     }
     // Perintah sakti untuk memberitahu seluruh layar UI agar melakukan update/refresh

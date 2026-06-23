@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/order_api_service.dart';
 import 'history_screen.dart';
 
@@ -15,39 +14,40 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final OrderApiService _orderApiService = OrderApiService();
-  File? _selectedImage;
-  final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
 
-  Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-    }
-  }
-
-  Future<void> _uploadBukti() async {
-    if (_selectedImage == null) return;
-
+  Future<void> _kirimKeWhatsApp() async {
     setState(() => _isUploading = true);
 
     try {
-      final response = await _orderApiService.uploadBuktiPembayaran(widget.order['id'], _selectedImage!);
-      if (response.statusCode == 200) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bukti berhasil diunggah! Pesanan akan diproses.')));
-          // Kembali ke history
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
-        }
-      }
+      // Ubah status jadi menunggu konfirmasi agar di riwayat berubah
+      await _orderApiService.updateOrderStatus(widget.order['id'], 'menunggu konfirmasi');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengunggah bukti pembayaran.'), backgroundColor: Colors.red));
-      }
+      debugPrint('Gagal update status otomatis: $e');
     } finally {
       if (mounted) setState(() => _isUploading = false);
+    }
+
+    // Nomor WA Admin (Bisa diganti nanti sesuai kebutuhan)
+    String noAdmin = "6282115352545"; // <-- GANTI DENGAN NOMOR ADMIN LADA BITS
+    String orderId = widget.order['id'].toString();
+    String total = widget.order['total_harga'].toString();
+    
+    String pesan = "Halo Admin Lada Bits!\n\nSaya ingin mengirimkan bukti pembayaran QRIS untuk pesanan:\n*No. Order:* #LB-$orderId\n*Total:* Rp $total\n\n[Mohon lampirkan foto struk transfer Anda di sini]";
+    
+    String url = "https://wa.me/$noAdmin?text=${Uri.encodeComponent(pesan)}";
+    
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+        }
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tidak dapat membuka WhatsApp')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal membuka WhatsApp. Pastikan aplikasi terinstall.')));
     }
   }
 
@@ -85,9 +85,45 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const Divider(height: 32),
                   const Text('Scan kode QR berikut menggunakan aplikasi e-Wallet atau M-Banking Anda.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
                   const SizedBox(height: 24),
-                  const Icon(Icons.qr_code_2, size: 200, color: Color(0xFF111111)),
+                  
+                  // Menampilkan gambar QRIS asli
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300, maxHeight: 300),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/qr.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.qr_code_2, size: 200, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  
                   const SizedBox(height: 16),
                   const Text('Lada Bits Official', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 16),
+                  
+                  // Peringatan Keamanan Anti-Phishing
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: const ListTile(
+                      leading: Icon(Icons.security, color: Colors.orange, size: 28),
+                      title: Text(
+                        'Peringatan Keamanan',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange),
+                      ),
+                      subtitle: Text(
+                        'Pastikan nama merchant di aplikasi pembayaran Anda adalah LADA BITS OFFICIAL. Jangan transfer jika namanya berbeda!',
+                        style: TextStyle(fontSize: 11, color: Colors.black87, height: 1.4),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      dense: true,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -95,35 +131,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.green.shade50,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: Colors.green.shade200),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  const Text('Bukti Pembayaran', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  const Text('Silakan unggah screenshot atau foto bukti transfer Anda.', style: TextStyle(fontSize: 13, color: Colors.black54)),
-                  const SizedBox(height: 16),
-                  if (_selectedImage != null) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(_selectedImage!, height: 150, width: double.infinity, fit: BoxFit.cover),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  SizedBox(
-                    width: double.infinity,
-                    height: 45,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFD80309)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      icon: const Icon(Icons.image, color: Color(0xFFD80309)),
-                      label: Text(_selectedImage == null ? 'Pilih Gambar Bukti' : 'Ganti Gambar', style: const TextStyle(color: Color(0xFFD80309), fontWeight: FontWeight.bold)),
-                      onPressed: _pickImage,
+                  const Icon(Icons.chat, color: Colors.green, size: 36),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Kirim via WhatsApp', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.green)),
+                        SizedBox(height: 4),
+                        Text('Tekan tombol di bawah untuk otomatis membuka WhatsApp Admin.', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                      ],
                     ),
                   ),
                 ],
@@ -144,13 +167,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD80309),
+                backgroundColor: Colors.green,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               ),
-              onPressed: _selectedImage == null || _isUploading ? null : _uploadBukti,
+              onPressed: _isUploading ? null : _kirimKeWhatsApp,
               child: _isUploading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('KIRIM BUKTI PEMBAYARAN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.chat, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('KIRIM BUKTI VIA WHATSAPP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      ],
+                    ),
             ),
           ),
         ),

@@ -85,20 +85,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
             if (items.isNotEmpty && items[0]['product'] != null && items[0]['product']['gambar'] != null) {
               String img = items[0]['product']['gambar'];
               if (img.isNotEmpty) {
-                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-                  if (img.startsWith('http://127.0.0.1') || img.startsWith('http://localhost')) {
-                    img = img.replaceAll('127.0.0.1', '10.0.2.2').replaceAll('localhost', '10.0.2.2');
-                  } else if (!img.startsWith('http')) {
-                    img = 'http://10.0.2.2:8000/storage/' + img;
-                  }
+                if (img.startsWith('assets/')) {
+                  gambarProduk = img; // Gambar adalah aset lokal, biarkan saja
                 } else {
-                  if (!img.startsWith('http')) {
-                    img = 'http://127.0.0.1:8000/api/image/' + img;
-                  } else if (img.contains('/storage/')) {
-                    img = img.replaceAll('/storage/', '/api/image/');
+                  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+                    if (img.startsWith('http://127.0.0.1') || img.startsWith('http://localhost')) {
+                      img = img.replaceAll('127.0.0.1', '10.0.2.2').replaceAll('localhost', '10.0.2.2');
+                    } else if (!img.startsWith('http')) {
+                      img = 'http://10.0.2.2:8000/storage/' + img;
+                    }
+                  } else {
+                    if (!img.startsWith('http')) {
+                      img = 'http://127.0.0.1:8000/api/image/' + img;
+                    } else if (img.contains('/storage/')) {
+                      img = img.replaceAll('/storage/', '/api/image/');
+                    }
                   }
+                  gambarProduk = img;
                 }
-                gambarProduk = img;
               }
             }
 
@@ -434,11 +438,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: trx['gambar'] != null && trx['gambar'].toString().isNotEmpty
-                                      ? Image.network(
-                                          trx['gambar'],
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (ctx, err, trace) => const Icon(Icons.image_outlined, color: Colors.black26),
-                                        )
+                                      ? (trx['gambar'].toString().startsWith('assets/')
+                                          ? Image.asset(
+                                              trx['gambar'],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (ctx, err, trace) => const Icon(Icons.image_outlined, color: Colors.black26),
+                                            )
+                                          : Image.network(
+                                              trx['gambar'],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (ctx, err, trace) => const Icon(Icons.image_outlined, color: Colors.black26),
+                                            ))
                                       : const Icon(Icons.image_outlined, color: Colors.black26),
                                 ),
                               ),

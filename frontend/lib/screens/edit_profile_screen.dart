@@ -34,9 +34,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.user.nama ?? '');
-    _emailController = TextEditingController(text: widget.user.email ?? '');
-    _phoneController = TextEditingController(text: widget.user.noHp ?? '');
+    _nameController = TextEditingController(text: widget.user.nama);
+    _emailController = TextEditingController(text: widget.user.email);
+    _phoneController = TextEditingController(text: widget.user.noHp);
   }
 
   Future<void> _pickImage() async {

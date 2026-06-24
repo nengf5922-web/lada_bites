@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/shipping_api_service.dart';
 import '../services/user_api_service.dart';
 import '../services/order_api_service.dart';
+import 'success_screen.dart';
 import 'payment_screen.dart'; 
 
 class CheckoutScreen extends StatefulWidget {
@@ -26,6 +27,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final ShippingApiService _shippingApiService = ShippingApiService();
 
   List<Map<String, dynamic>> _listProduk = [];
+  int _totalHargaProduk = 0;
   int _totalHargaKeseluruhan = 0;
 
   List<dynamic> _ongkirList = [];

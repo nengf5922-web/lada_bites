@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../models/user_model.dart';
 import '../services/user_api_service.dart';
 import 'dart:io' as io;
@@ -25,7 +27,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
-  
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;  
 
 
   @override

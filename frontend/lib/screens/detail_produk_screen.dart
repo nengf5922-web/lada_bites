@@ -161,11 +161,11 @@ class ProdukDetailScreen extends StatelessWidget {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => CheckoutScreen(
                       produkDipilih: [
                         {
-                          "id": produk['id'],
-                          "nama": produk['nama'],
-                          "harga": produk['harga'],
+                          "id": widget.produk['id'],
+                          "nama": widget.produk['nama'],
+                          "harga": widget.produk['harga'],
                           "jumlah": 1,
-                          "gambar": produk['gambar'],
+                          "gambar": widget.produk['gambar'],
                         }
                       ],
                     )));
